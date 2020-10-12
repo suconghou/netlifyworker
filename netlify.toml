@@ -2,6 +2,5 @@
   functions = "functions"
 [[redirects]]
   from = "/video/*"
-  to = "/functions/api"
+  to = "/.netlify/functions/api"
   status = 200
-  force = true
