@@ -1,8 +1,8 @@
 import { fetch, filterHeaders } from '../utils/fetch'
 
 const imageMap = {
-    "jpg": "http://i.ytimg.com/vi/",
-    "webp": "http://i.ytimg.com/vi_webp/"
+    "jpg": "https://i.ytimg.com/vi/",
+    "webp": "https://i.ytimg.com/vi_webp/"
 }
 
 export default async event => {

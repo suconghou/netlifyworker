@@ -40,7 +40,7 @@ export default async event => {
 
 
 export const videoInfo = async event => {
-    const matches = event.request.url.match(/\/video\/([\w\-]{6,12})\.json/)
+    const matches = event.path.match(/\/video\/([\w\-]{6,12})\.json/)
     const vid = matches[1]
     return videoInfoParse(vid)
 }

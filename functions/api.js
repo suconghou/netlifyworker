@@ -153,8 +153,8 @@ const filterHeaders = (head, age = 3600) => {
 };
 
 const imageMap = {
-    "jpg": "http://i.ytimg.com/vi/",
-    "webp": "http://i.ytimg.com/vi_webp/"
+    "jpg": "https://i.ytimg.com/vi/",
+    "webp": "https://i.ytimg.com/vi_webp/"
 };
 
 var img = async event => {
@@ -541,7 +541,7 @@ var video = async event => {
 
 
 const videoInfo = async event => {
-    const matches = event.request.url.match(/\/video\/([\w\-]{6,12})\.json/);
+    const matches = event.path.match(/\/video\/([\w\-]{6,12})\.json/);
     const vid = matches[1];
     return videoInfoParse(vid)
 };
