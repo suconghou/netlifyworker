@@ -1,4 +1,4 @@
-import https from 'https'
+const https = require('https')
 import { get, set } from './util'
 
 const agent = new https.Agent({ keepAlive: true });

@@ -1,5 +1,3 @@
-import https$1 from 'https';
-
 // Conditions
 const Method = method => event => event.httpMethod.toLowerCase() === method.toLowerCase();
 
@@ -108,7 +106,9 @@ const expire = () => {
     }
 };
 
-const agent = new https$1.Agent({ keepAlive: true });
+const https = require('https');
+
+const agent = new https.Agent({ keepAlive: true });
 const reqHeaders = { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:74.0) Gecko/20100101 Firefox/74.0' };
 const timeout = 10e3;
 
@@ -126,7 +126,7 @@ const fetch = async (url, header = {}) => {
 
 async function httpGet(url, header = {}) {
     return new Promise((resolve, reject) => {
-        https$1.get(url, { timeout, headers: { ...reqHeaders, ...header }, agent, }, (res) => {
+        https.get(url, { timeout, headers: { ...reqHeaders, ...header }, agent, }, (res) => {
             const { statusCode, headers } = res;
             let error;
             if (statusCode !== 200) {
@@ -175,8 +175,8 @@ var img = async event => {
     }
 };
 
-const https = require('https');
-const agent$1 = new https.Agent({ keepAlive: true });
+const https$1 = require('https');
+const agent$1 = new https$1.Agent({ keepAlive: true });
 const headers = { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:74.0) Gecko/20100101 Firefox/74.0' };
 const timeout$1 = 5e3;
 const cache$1 = new Map();
@@ -213,7 +213,7 @@ const ajax = async (url) => {
 };
 async function httpGet$1(url) {
     return new Promise((resolve, reject) => {
-        https.get(url, { timeout: timeout$1, headers, agent: agent$1, }, (res) => {
+        https$1.get(url, { timeout: timeout$1, headers, agent: agent$1, }, (res) => {
             const { statusCode } = res;
             let error;
             if (statusCode !== 200) {
