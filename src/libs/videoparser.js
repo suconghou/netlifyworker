@@ -1,6 +1,5 @@
-import { Agent, get as get$1 } from 'https';
-
-const agent = new Agent({ keepAlive: true });
+const https = require('https');
+const agent = new https.Agent({ keepAlive: true });
 const headers = { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:74.0) Gecko/20100101 Firefox/74.0' };
 const timeout = 5e3;
 const cache = new Map();
@@ -37,7 +36,7 @@ const ajax = async (url) => {
 };
 async function httpGet(url) {
     return new Promise((resolve, reject) => {
-        get$1(url, { timeout, headers, agent, }, (res) => {
+        https.get(url, { timeout, headers, agent, }, (res) => {
             const { statusCode } = res;
             let error;
             if (statusCode !== 200) {
