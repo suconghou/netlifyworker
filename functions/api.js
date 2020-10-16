@@ -126,19 +126,39 @@ const fetch = async (url, header = {}) => {
 
 async function httpGet(url, header = {}) {
     return new Promise((resolve, reject) => {
-        https.get(url, { timeout, headers: { ...reqHeaders, ...header }, agent, }, (res) => {
-            const { statusCode, headers } = res;
-            let error;
-            if (statusCode !== 200) {
-                error = new Error(`${url} Status Code: ${statusCode}`);
-            }
-            if (error) {
-                res.resume();
-                return reject(error)
-            }
-            const buf = [];
-            res.on('error', reject).on('data', (chunk) => { buf.push(chunk); }).on('end', () => resolve({ headers, data: Buffer.concat(buf) }));
-        }).on('error', reject);
+        let times = 0;
+        const fn = (target) => {
+            https.get(target, { timeout, headers: { ...reqHeaders, ...header }, agent, }, (res) => {
+                times++;
+                const { statusCode, headers } = res;
+                let error;
+                if (statusCode !== 200) {
+                    if (times <= 3 && [301, 302, 303].includes(statusCode)) {
+                        if (headers.location.substr(0, 4).toLowerCase() == "http") {
+                            target = headers.location;
+                        } else {
+                            const u = new URL(target);
+                            if (headers.location.charAt(0) == "/") {
+                                target = u.origin + headers.location;
+                            } else {
+                                const arr = u.pathname.split('/');
+                                arr[arr.length - 1] = headers.location;
+                                target = u.origin + arr.join('/');
+                            }
+                        }
+                        return fn(target)
+                    }
+                    error = new Error(`${url} Status Code: ${statusCode}`);
+                }
+                if (error) {
+                    res.resume();
+                    return reject(error)
+                }
+                const buf = [];
+                res.on('error', reject).on('data', (chunk) => { buf.push(chunk); }).on('end', () => resolve({ headers, data: Buffer.concat(buf) }));
+            }).on('error', reject);
+        };
+        fn(url);
     })
 }
 
@@ -213,19 +233,41 @@ const ajax = async (url) => {
 };
 async function httpGet$1(url) {
     return new Promise((resolve, reject) => {
-        https$1.get(url, { timeout: timeout$1, headers, agent: agent$1, }, (res) => {
-            const { statusCode } = res;
-            let error;
-            if (statusCode !== 200) {
-                error = new Error(`${url} Status Code: ${statusCode}`);
-            }
-            if (error) {
-                res.resume();
-                return reject(error);
-            }
-            const buf = [];
-            res.on('error', reject).on('data', (chunk) => { buf.push(chunk); }).on('end', () => resolve(Buffer.concat(buf)));
-        }).on('error', reject);
+        let times = 0;
+        const fn = (target) => {
+            https$1.get(target, { timeout: timeout$1, headers, agent: agent$1, }, (res) => {
+                times++;
+                const { statusCode, headers } = res;
+                let error;
+                if (statusCode !== 200) {
+                    if (times <= 3 && [301, 302, 303].includes(statusCode)) {
+                        if (headers.location.substr(0, 4).toLowerCase() == "http") {
+                            target = headers.location;
+                        }
+                        else {
+                            const u = new URL(target);
+                            if (headers.location.charAt(0) == "/") {
+                                target = u.origin + headers.location;
+                            }
+                            else {
+                                const arr = u.pathname.split('/');
+                                arr[arr.length - 1] = headers.location;
+                                target = u.origin + arr.join('/');
+                            }
+                        }
+                        return fn(target);
+                    }
+                    error = new Error(`${url} Status Code: ${statusCode}`);
+                }
+                if (error) {
+                    res.resume();
+                    return reject(error);
+                }
+                const buf = [];
+                res.on('error', reject).on('data', (chunk) => { buf.push(chunk); }).on('end', () => resolve(Buffer.concat(buf)));
+            }).on('error', reject);
+        };
+        fn(url);
     });
 }
 
@@ -413,7 +455,7 @@ class pageParser extends infoGetter {
             throw new Error("get page data failed");
         }
         const arr = text.match(/ytplayer\.config\s*=\s*({.+?});ytplayer/);
-        if (arr.length < 2) {
+        if (!arr || arr.length < 2) {
             throw new Error("ytplayer config not found");
         }
         const data = JSON.parse(arr[1]);
