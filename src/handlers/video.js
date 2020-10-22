@@ -19,7 +19,15 @@ export default async event => {
         }
     }
     const start = +new Date()
-    cacheItem = await videoURLParse(vid, itag)
+    try {
+        cacheItem = await videoURLParse(vid, itag)
+    } catch (e) {
+        return {
+            statusCode: 200,
+            headers: filterHeaders({}, 3600),
+            body: JSON.stringify({ code: -1, msg: e.message || e.stack || e })
+        }
+    }
     if (!cacheItem.url) {
         return {
             statusCode: 500,
@@ -42,7 +50,15 @@ export default async event => {
 export const videoInfo = async event => {
     const matches = event.path.match(/\/video\/([\w\-]{6,12})\.json/)
     const vid = matches[1]
-    return videoInfoParse(vid)
+    try {
+        return await videoInfoParse(vid)
+    } catch (e) {
+        return {
+            statusCode: 200,
+            headers: filterHeaders({}, 3600),
+            body: JSON.stringify({ code: -1, msg: e.message || e.stack || e })
+        }
+    }
 }
 
 const videoURLParse = async (vid, itag) => {
