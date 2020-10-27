@@ -450,22 +450,29 @@ class pageParser extends infoGetter {
         this.videoPageURL = `${baseURL}/watch?v=${vid}`;
     }
     async init() {
+        let jsPath;
         const text = await this.fetch(this.videoPageURL);
         if (!text) {
             throw new Error("get page data failed");
+        }
+        const jsPathReg = text.match(/"jsUrl":"(\/s\/player.*?base.js)"/);
+        if (jsPathReg && jsPathReg.length == 2) {
+            jsPath = jsPathReg[1];
         }
         const arr = text.match(/ytplayer\.config\s*=\s*({.+?});ytplayer/);
         if (!arr || arr.length < 2) {
             throw new Error("ytplayer config not found");
         }
         const data = JSON.parse(arr[1]);
-        let jsPath, player_response;
+        let player_response;
         const args = data.args;
         const assets = data.assets;
-        if (!args || !assets) {
+        if (!args) {
             throw new Error("not found player_response");
         }
-        jsPath = assets.js;
+        if (!jsPath && assets && assets.js) {
+            jsPath = assets.js;
+        }
         player_response = JSON.parse(args.player_response);
         if (!player_response.streamingData || !player_response.videoDetails) {
             throw new Error("invalid player_response");
@@ -486,14 +493,25 @@ class infoParser extends infoGetter {
     async init() {
         const data = parseQuery(await this.fetch(this.videoInfoURL));
         if (data.status !== 'ok') {
-            throw new Error(`${data.status}:code ${data.errorcode},reason ${data.reason}`);
+            throw new Error(`${data.status}:code ${data.errorcode},reason ${data.reason.replace(/\+/g, ' ')}`);
         }
         const player_response = JSON.parse(data.player_response);
         if (!player_response) {
             throw new Error("empty player_response");
         }
-        if (player_response.playabilityStatus.status == 'UNPLAYABLE') {
-            this.error = player_response.playabilityStatus.reason;
+        const ps = player_response.playabilityStatus;
+        if (['UNPLAYABLE', 'LOGIN_REQUIRED', 'ERROR'].includes(ps.status)) {
+            // 私享视频 视频信息都获取不到,必须终止
+            const { reason, errorScreen } = ps;
+            let subreason = reason || ps.status;
+            if (errorScreen && errorScreen.playerErrorMessageRenderer && errorScreen.playerErrorMessageRenderer.subreason) {
+                subreason += ' ' + errorScreen.playerErrorMessageRenderer.subreason.simpleText;
+            }
+            subreason = subreason.replace(/\+/g, ' ');
+            if (['LOGIN_REQUIRED', 'ERROR'].includes(ps.status)) {
+                throw new Error(subreason);
+            }
+            this.error = subreason;
         }
         this.videoDetails = player_response.videoDetails;
         this.streamingData = player_response.streamingData;
@@ -562,7 +580,15 @@ var video = async event => {
         }
     }
     const start = +new Date();
-    cacheItem = await videoURLParse(vid, itag);
+    try {
+        cacheItem = await videoURLParse(vid, itag);
+    } catch (e) {
+        return {
+            statusCode: 200,
+            headers: filterHeaders({}, 3600),
+            body: JSON.stringify({ code: -1, msg: e.message || e.stack || e })
+        }
+    }
     if (!cacheItem.url) {
         return {
             statusCode: 500,
@@ -585,7 +611,15 @@ var video = async event => {
 const videoInfo = async event => {
     const matches = event.path.match(/\/video\/([\w\-]{6,12})\.json/);
     const vid = matches[1];
-    return videoInfoParse(vid)
+    try {
+        return await videoInfoParse(vid)
+    } catch (e) {
+        return {
+            statusCode: 200,
+            headers: filterHeaders({}, 3600),
+            body: JSON.stringify({ code: -1, msg: e.message || e.stack || e })
+        }
+    }
 };
 
 const videoURLParse = async (vid, itag) => {
