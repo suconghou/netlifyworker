@@ -23,7 +23,7 @@ export default async event => {
         cacheItem = await videoURLParse(vid, itag)
     } catch (e) {
         return {
-            statusCode: 200,
+            statusCode: 500,
             headers: filterHeaders({}, 3600),
             body: JSON.stringify({ code: -1, msg: e.message || e.stack || e })
         }
