@@ -327,10 +327,14 @@ class infoParser extends infoGetter {
         super();
         this.vid = vid;
         this.fetch = fetch;
-        this.videoInfoURL = `${baseURL}/get_video_info?video_id=${vid}`;
+        this.videoInfoURL = `${baseURL}/get_video_info?video_id=${vid}&html5=1`;
     }
     async init() {
-        const data = parseQuery(await this.fetch(this.videoInfoURL));
+        const infostr = await this.fetch(this.videoInfoURL);
+        if (!infostr.includes('status') && infostr.split('&').length < 5) {
+            throw new Error("get_video_info error :" + infostr);
+        }
+        const data = parseQuery(infostr);
         if (data.status !== 'ok') {
             throw new Error(`${data.status}:code ${data.errorcode},reason ${data.reason}`);
         }
