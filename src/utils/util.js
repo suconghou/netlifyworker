@@ -27,20 +27,6 @@ export const expire = () => {
     }
 }
 
-export const fetchInit = async (url) => {
-    const headers = { 'User-Agent': 'fetch init' }
-    return fetch(url, {
-        headers,
-        method: 'GET',
-        cf: {
-            cacheEverything: true,
-            cacheTtl: 3600,
-            cacheTtlByStatus: { '200-299': 3600, 404: 60, '500-599': 10 }
-        }
-    })
-}
-
-
 export const copyHeader = (status, headers = {}, head) => {
     const ok = status == 200 || status == 206;
     const age = ok ? 864000 : 60;
